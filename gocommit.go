@@ -178,7 +178,7 @@ func commitFiles(commitmessage string) {
   if err != nil {
     log.Fatal(err)
   } else {
-    log.Println("Files committed")
+    log.Println("Files committed ->")
   }
 }
 
@@ -188,6 +188,6 @@ func pushFiles() {
   if err != nil {
     log.Fatal(err)
   } else {
-    log.Println("Pushed changes ->")
+    log.Println("Pushed changes")
   }
 }
