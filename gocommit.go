@@ -188,6 +188,6 @@ func pushFiles() {
   if err != nil {
     log.Fatal(err)
   } else {
-    log.Println("Pushed changes")
+    log.Println("Pushed changes ->")
   }
 }
