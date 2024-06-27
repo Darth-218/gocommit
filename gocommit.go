@@ -55,14 +55,18 @@ func runCommand(input []string) {
   switch input[0] {
   case "view":
     if len(input) > 1 {
-      fmt.Println(getFiles(input[1]))
+      getFiles(input[1])
     } else {
       getFiles("")
     }
   case "add":
-    files := getFiles("untracked")
-    files = append(files[:], getFiles("changed")[:]...)
-    addFiles(files)
+    if len(input) == 1 {
+      files := getFiles("untracked")
+      files = append(files[:], getFiles("changed")[:]...)
+      addFiles(files, "all")
+    } else {
+      addFiles(input[1:], "selection")
+    }
   case "commit":
     if len(input) > 1 {
       commitFiles(strings.Join(input[1:], " "))
@@ -145,31 +149,40 @@ func getFiles(state string) (files []string) {
   return
 }
 
-func addFiles(files []string) {
+func gitAdd(files []string) {
   for index, value := range files {
-    fmt.Printf("%v: %v\n", index + 1, value)
+  add := exec.Command("git", "add", files[index])
+  err := add.Run()
+  if err != nil {
+    log.Fatal(err)
+  } else {
+    log.Printf("Added: %v\n", files[intvalue - 1])
   }
-  fmt.Println("Enter the index of the files to add.")
-  reader := bufio.NewReader(os.Stdin)
-  fmt.Print("--> ")
-  input, err := reader.ReadString('\n')
+  }
+}
+
+// TODO: Allow usage of '*'
+// TODO: Allow the selection of specific files
+func addFiles(files []string, mode string) {
   var inputsplit []string
-  if err == nil {
+  switch mode {
+  case "all":
+    for index, value := range files {
+      fmt.Printf("%v: %v\n", index + 1, value)
+    }
+    fmt.Println("Enter the index of the files to add.")
+    reader := bufio.NewReader(os.Stdin)
+    fmt.Print("--> ")
+    input, _ := reader.ReadString('\n')
     input = strings.TrimSuffix(input, "\n")
     inputsplit = strings.Split(input, " ")
     for _, value := range inputsplit {
       intvalue, _ := strconv.Atoi(value)
-      add := exec.Command("git", "add", files[intvalue - 1])
-      err := add.Run()
-      if err != nil {
-        log.Fatal(err)
-      } else {
-        log.Printf("Added: %v\n", files[intvalue - 1])
-      }
     }
-  } else {
-    fmt.Println()
-  }
+  case "selection":
+  default:
+    log.Fatal("Invalid parameter for the function \"addFiles\" ->", mode)
+}
 }
 
 func getCommitid() (commitid string) {
