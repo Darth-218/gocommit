@@ -172,13 +172,24 @@ func addFiles(files []string) {
   }
 }
 
+func getCommitid() (commitid string) {
+  logs := exec.Command("git", "log")
+  if ids, err := logs.CombinedOutput(); err == nil {
+    commitids := strings.Split(string(ids), "\n")
+    commitid = commitids[0]
+  } else {
+    log.Fatal(err)
+  }
+  return
+}
+
 func commitFiles(commitmessage string) {
   commit := exec.Command("git", "commit", "-m", commitmessage)
   err := commit.Run()
   if err != nil {
     log.Fatal(err)
   } else {
-    log.Println("Files committed ->")
+    log.Println("Files committed ->", getCommitid())
   }
 }
 
