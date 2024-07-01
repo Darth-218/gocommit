@@ -1,4 +1,5 @@
 // TODO: TUI
+// TODO: Tab completions
 package main
 
 import (
