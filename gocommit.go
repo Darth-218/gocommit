@@ -150,14 +150,14 @@ func getFiles(state string) (files []string) {
 }
 
 func gitAdd(files []string) {
-  for index, value := range files {
+  for index, _ := range files {
   add := exec.Command("git", "add", files[index])
   err := add.Run()
   if err != nil {
     log.Fatal(err)
   } else {
-    log.Printf("Added: %v\n", files[intvalue - 1])
-  }
+    log.Printf("Added: %v\n", files[index])
+    }
   }
 }
 
@@ -166,7 +166,7 @@ func gitAdd(files []string) {
 func addFiles(files []string, mode string) {
   var inputsplit []string
   switch mode {
-  case "all":
+  case "index":
     for index, value := range files {
       fmt.Printf("%v: %v\n", index + 1, value)
     }
@@ -180,6 +180,7 @@ func addFiles(files []string, mode string) {
       intvalue, _ := strconv.Atoi(value)
     }
   case "selection":
+    gitAdd(files)
   default:
     log.Fatal("Invalid parameter for the function \"addFiles\" ->", mode)
 }
