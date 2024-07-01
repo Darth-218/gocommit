@@ -68,6 +68,12 @@ func runCommand(input []string) {
     } else {
       gitAdd(input[1:])
     }
+  case "restore":
+    if len(input) == 1 {
+      restoreFiles(addFiles(getFiles("added")))
+    } else {
+      restoreFiles(input[1:])
+    }
   case "commit":
     if len(input) > 1 {
       commitFiles(strings.Join(input[1:], " "))
@@ -171,7 +177,7 @@ func addFiles(files []string) (addedfiles []string) {
     for index, value := range files {
       fmt.Printf("%v: %v\n", index + 1, value)
     }
-    fmt.Println("Enter the index of the files to add.")
+    fmt.Println("Enter the index of the files to select.")
     reader := bufio.NewReader(os.Stdin)
     fmt.Print("--> ")
     input, err := reader.ReadString('\n')
@@ -190,6 +196,18 @@ func addFiles(files []string) (addedfiles []string) {
       addedfiles = append(addedfiles, files[intvalue - 1])
     }
     return
+}
+
+func restoreFiles(files []string) {
+  for _, value := range files {
+    restore := exec.Command("git", "restore", "--staged", value)
+    err := restore.Run()
+    if err != nil {
+      log.Println("Failed to restore files, are they added?")
+    } else {
+      log.Println("Restored files.")
+    }
+  }
 }
 
 func getCommitid() (commitid string) {
