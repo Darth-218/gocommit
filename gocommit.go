@@ -219,7 +219,11 @@ func commitFiles(commitmessage string) {
 
 func pushFiles() {
   push := exec.Command("git", "push")
-  err := push.Run()
+  message, err := push.CombinedOutput()
+  if string(message) == "Everything up-to-date\n" {
+    log.Println("No changes to push")
+    return
+  }
   if err != nil {
     log.Fatal(err)
   } else {
