@@ -64,9 +64,9 @@ func runCommand(input []string) {
     if len(input) == 1 {
       files := getFiles("untracked")
       files = append(files[:], getFiles("changed")[:]...)
-      addFiles(files, "index")
+      gitAdd(addFiles(files))
     } else {
-      addFiles(input[1:], "selection")
+      gitAdd(input[1:])
     }
   case "commit":
     if len(input) > 1 {
@@ -163,37 +163,33 @@ func gitAdd(files []string) {
 }
 
 // TODO: Allow usage of '*'
-func addFiles(files []string, mode string) {
+func addFiles(files []string) (addedfiles []string) {
   if len(files) == 0 {
     return
   }
   var inputsplit []string
-  var outputfiles []string
-  switch mode {
-  case "index":
     for index, value := range files {
       fmt.Printf("%v: %v\n", index + 1, value)
     }
     fmt.Println("Enter the index of the files to add.")
     reader := bufio.NewReader(os.Stdin)
     fmt.Print("--> ")
-    input, _ := reader.ReadString('\n')
+    input, err := reader.ReadString('\n')
+    if err != nil {
+      fmt.Println()
+      return
+    }
     input = strings.TrimSuffix(input, "\n")
     inputsplit = strings.Split(input, " ")
     for _, value := range inputsplit {
       intvalue, err := strconv.Atoi(value)
       if err != nil {
 	fmt.Println("Invalid input.")
-	addFiles(files, "index")
+	addFiles(files)
       }
-      outputfiles = append(outputfiles, files[intvalue - 1])
+      addedfiles = append(addedfiles, files[intvalue - 1])
     }
-    gitAdd(outputfiles)
-  case "selection":
-    gitAdd(files)
-  default:
-    log.Fatal("Invalid parameter for the function \"addFiles\" ->", mode)
-}
+    return
 }
 
 func getCommitid() (commitid string) {
@@ -209,7 +205,11 @@ func getCommitid() (commitid string) {
 
 func commitFiles(commitmessage string) {
   commit := exec.Command("git", "commit", "-m", commitmessage)
-  err := commit.Run()
+  message, err := commit.CombinedOutput()
+  if strings.Contains(string(message), commitmessage) == false {
+    log.Println("No changes to commit.")
+    return
+  }
   if err != nil {
     log.Fatal(err)
   } else {
