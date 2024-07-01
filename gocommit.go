@@ -63,7 +63,7 @@ func runCommand(input []string) {
     if len(input) == 1 {
       files := getFiles("untracked")
       files = append(files[:], getFiles("changed")[:]...)
-      addFiles(files, "all")
+      addFiles(files, "index")
     } else {
       addFiles(input[1:], "selection")
     }
@@ -151,12 +151,12 @@ func getFiles(state string) (files []string) {
 
 func gitAdd(files []string) {
   for index, _ := range files {
-  add := exec.Command("git", "add", files[index])
-  err := add.Run()
-  if err != nil {
-    log.Fatal(err)
-  } else {
-    log.Printf("Added: %v\n", files[index])
+    add := exec.Command("git", "add", files[index])
+    err := add.Run()
+    if err != nil {
+      log.Fatal(err)
+    } else {
+      log.Printf("Added: %v\n", files[index])
     }
   }
 }
@@ -165,6 +165,7 @@ func gitAdd(files []string) {
 // TODO: Allow the selection of specific files
 func addFiles(files []string, mode string) {
   var inputsplit []string
+  var outputfiles []string
   switch mode {
   case "index":
     for index, value := range files {
@@ -177,8 +178,14 @@ func addFiles(files []string, mode string) {
     input = strings.TrimSuffix(input, "\n")
     inputsplit = strings.Split(input, " ")
     for _, value := range inputsplit {
-      intvalue, _ := strconv.Atoi(value)
+      intvalue, err := strconv.Atoi(value)
+      if err != nil {
+	fmt.Println("Invalid input.")
+	addFiles(files, "index")
+      }
+      outputfiles = append(outputfiles, files[intvalue - 1])
     }
+    gitAdd(outputfiles)
   case "selection":
     gitAdd(files)
   default:
