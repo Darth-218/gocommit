@@ -1,3 +1,4 @@
+// TODO: TUI
 package main
 
 import (
@@ -84,9 +85,27 @@ func runCommand(input []string) {
     pushFiles()
   case "exit":
     os.Exit(0)
+  case "help":
+    help()
   default:
-    fmt.Println("Invalid option:", input[0])
+    fmt.Printf("Invalid option: %v. Use 'help' to see available commands\n", input[0])
   }
+}
+
+func help() {
+  fmt.Println("Available commands:")
+  fmt.Println("\tview [untracked, added, changed, all, none]:")
+  fmt.Println("\t\tUsed to the status of files.")
+  fmt.Println("\tadd [files, none]:")
+  fmt.Println("\t\tUsed to add files to commit")
+  fmt.Println("\trestore [files, none]:")
+  fmt.Println("\t\tUsed to restore added files")
+  fmt.Println("\tcommit [message]:")
+  fmt.Println("\t\tUsed to commit added files")
+  fmt.Println("\tpush:")
+  fmt.Println("\t\tUsed to push committed files")
+  fmt.Println("\texit:")
+  fmt.Println("\t\tExits.")
 }
 
 func getStatus() (git_status []string) {
