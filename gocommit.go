@@ -52,7 +52,8 @@ func loop() {
 }
 
 func runCommand(input []string) {
-  switch input[0] {
+  command := strings.TrimSpace(input[0])
+  switch command {
   case "view":
     if len(input) > 1 {
       getFiles(input[1])
@@ -162,8 +163,10 @@ func gitAdd(files []string) {
 }
 
 // TODO: Allow usage of '*'
-// TODO: Allow the selection of specific files
 func addFiles(files []string, mode string) {
+  if len(files) == 0 {
+    return
+  }
   var inputsplit []string
   var outputfiles []string
   switch mode {
