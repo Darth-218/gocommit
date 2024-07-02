@@ -1,7 +1,6 @@
 // TODO: TUI
 // TODO: Tab completions
 // TODO: 'view' command representation
-// TODO: Fix repo detection
 package main
 
 import (
@@ -61,7 +60,7 @@ func runCommand(input []string) {
   switch command {
   case "view":
     if len(input) > 1 {
-      getFiles(input[1])
+      fmt.Println(getFiles(input[1]))
     } else {
       getFiles("")
     }
@@ -87,6 +86,10 @@ func runCommand(input []string) {
     }
   case "push":
     pushFiles()
+  case "fetch":
+    fetchFiles()
+  case "pull":
+    pullFiles()
   case "exit":
     os.Exit(0)
   case "help":
@@ -132,22 +135,20 @@ func getFiles(state string) (files []string) {
     startstring = "Untracked files:"
   case "added":
     startstring = "Changes to be committed:"
-    trim = "new file:   "
-    alttrim = "modified:   "
+    trim = "new file:"
+    alttrim = "modified:"
   case "changed":
     startstring = "Changes not staged for commit:"
-    trim = "modified:   "
-    alttrim = "deleted:   "
+    trim = "modified:"
+    alttrim = "deleted:"
   case "":
-    fallthrough
-  case "all":
     fmt.Printf("Untracked files: %v\nChanged files: %v\nFiles to commit: %v\n",
       getFiles("untracked"),
       getFiles("changed"),
       getFiles("added"))
     return
   default:
-    fmt.Printf("Invalid option \"%v\"", state)
+    fmt.Printf("Invalid option '%v'", state)
     return
   }
   files = getStatus()
@@ -274,5 +275,25 @@ func pushFiles() {
     log.Fatal(err)
   } else {
     log.Println("Pushed changes")
+  }
+}
+
+func fetchFiles() {
+  fetch := exec.Command("git", "fetch")
+  message, err := fetch.CombinedOutput()
+  if err == nil {
+    log.Println(message)
+  } else {
+    log.Println(err)
+  }
+}
+
+func pullFiles() {
+  pull := exec.Command("git", "pull")
+  message, err := pull.CombinedOutput()
+  if err == nil {
+    log.Println(message)
+  } else {
+    log.Println(err)
   }
 }
