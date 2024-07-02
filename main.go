@@ -1,6 +1,7 @@
 // TODO: TUI
 // TODO: Tab completions
 // TODO: 'view' command representation
+// TODO: Fix repo detection
 package main
 
 import (
@@ -25,15 +26,16 @@ func checkDir() (isgit bool) {
   isgit = false
   fullpath, _ := os.Getwd()
   paths := strings.Split(fullpath, "/")
-  var end int = len(paths) - 1
+  end := len(paths)
   for end >= 0 {
-    currentpath := paths[:end]; end--
+    currentpath := paths[0:end]
     currentpathjoined := strings.Join(currentpath, "/") + "/.git"
     _, err := os.ReadDir(currentpathjoined)
     if err == nil {
       isgit = true
       return
     }
+    end--
   }
   return
 }
@@ -162,6 +164,7 @@ func getFiles(state string) (files []string) {
     }
     files[index] = strings.TrimPrefix(files[index], trim)
     files[index] = strings.TrimPrefix(files[index], alttrim)
+    files[index] = strings.TrimSpace(files[index])
   }
   if keystart == len(files) {
     files = nil
@@ -206,6 +209,10 @@ func addFiles(files []string) (addedfiles []string) {
       fmt.Println()
       return
     }
+    if input == "\n" {
+      addedfiles = files
+      return
+    }
     input = strings.TrimSuffix(input, "\n")
     inputsplit = strings.Split(input, " ")
     for _, value := range inputsplit {
@@ -226,7 +233,7 @@ func restoreFiles(files []string) {
     if err != nil {
       log.Println("Failed to restore files, are they added?")
     } else {
-      log.Println("Restored files.")
+      log.Printf("Restored file '%v'.\n", value)
     }
   }
 }
