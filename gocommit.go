@@ -1,5 +1,6 @@
 // TODO: TUI
 // TODO: Tab completions
+// TODO: 'view' command representation
 package main
 
 import (
