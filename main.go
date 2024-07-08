@@ -1,6 +1,8 @@
 // TODO: TUI
 // TODO: Tab completions
 // TODO: 'view' command representation
+// TODO: remove the git repo inside the git repo from showing
+// up as a change
 package main
 
 import (
