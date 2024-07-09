@@ -17,6 +17,7 @@ import (
 
 func main() {
   if checkDir() {
+    getFiles("")
     loop()
   } else {
     log.Fatal("Current directory is not a git repository.")
@@ -102,7 +103,7 @@ func runCommand(input []string) {
 }
 
 func help() {
-  fmt.Println("Available commands:")
+  fmt.Println("Available commands:\n")
   fmt.Println("\tview [untracked, added, changed, all, none]:")
   fmt.Println("\t\tUsed to the status of files.")
   fmt.Println("\tadd [files, none]:")
@@ -122,7 +123,9 @@ func getStatus() (git_status []string) {
   if unstaged, err := status.CombinedOutput(); err == nil {
     git_status = strings.Split(string(unstaged), "\n")
     for index, value := range git_status {
-    git_status[index] = strings.TrimSpace(value)
+      if strings.HasSuffix(value, ")") == false {
+	git_status[index] = strings.TrimSpace(value)
+      }
     }
   } else {
     log.Fatal(err)
@@ -144,10 +147,13 @@ func getFiles(state string) (files []string) {
     trim = "modified:"
     alttrim = "deleted:"
   case "":
-    fmt.Printf("Untracked files: %v\nChanged files: %v\nFiles to commit: %v\n",
-      getFiles("untracked"),
-      getFiles("changed"),
-      getFiles("added"))
+    untracked_files := strings.Join(getFiles("untracked"), "\n")
+    changed_files := strings.Join(getFiles("changed"), "\n")
+    added_files := strings.Join(getFiles("added"), "\n")
+    fmt.Printf("Untracked files: \n\t%v\n\nChanged files: \n\t%v\n\nFiles to commit: \n\t%v\n",
+      untracked_files,
+      changed_files,
+      added_files)
     return
   default:
     fmt.Printf("Invalid option '%v'", state)
