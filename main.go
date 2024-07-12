@@ -1,7 +1,8 @@
+// TODO: git diff colors
 // TODO: TUI
 // TODO: Tab completions
-// TODO: 'view' command representation
-// TODO: remove the git repo inside the git repo from showing
+// FIX: "view" outputs
+// FIX: remove the git repo inside the git repo from showing
 // up as a change
 package main
 
@@ -87,6 +88,14 @@ func runCommand(input []string) {
     } else {
       fmt.Println("No commit message specified")
     }
+  case "diff":
+    if len(input) > 1 {
+      changes := getDiff(input[1])
+      changes_str := strings.Join(changes, "\n")
+      fmt.Println(changes_str)
+    } else {
+      fmt.Println("No file specified")
+    }
   case "push":
     pushFiles()
   case "fetch":
@@ -103,11 +112,13 @@ func runCommand(input []string) {
 }
 
 func help() {
-  fmt.Println("Available commands:\n")
+  fmt.Printf("Available commands:\n\n")
   fmt.Println("\tview [untracked, added, changed, all, none]:")
   fmt.Println("\t\tUsed to the status of files.")
   fmt.Println("\tadd [files, none]:")
   fmt.Println("\t\tUsed to add files to commit")
+  fmt.Println("\tdiff [file]:")
+  fmt.Println("\t\tUsed to view modifications made to the files")
   fmt.Println("\trestore [files, none]:")
   fmt.Println("\t\tUsed to restore added files")
   fmt.Println("\tcommit [message]:")
@@ -119,14 +130,9 @@ func help() {
 }
 
 func getStatus() (git_status []string) {
-  status := exec.Command("git", "status")
+  status := exec.Command("git", "status", "-s")
   if unstaged, err := status.CombinedOutput(); err == nil {
     git_status = strings.Split(string(unstaged), "\n")
-    for index, value := range git_status {
-      if strings.HasSuffix(value, ")") == false {
-	git_status[index] = strings.TrimSpace(value)
-      }
-    }
   } else {
     log.Fatal(err)
   }
@@ -134,23 +140,19 @@ func getStatus() (git_status []string) {
 }
 
 func getFiles(state string) (files []string) {
-  var startstring, trim, alttrim string
+  var startstring string
   switch state {
   case "untracked":
-    startstring = "Untracked files:"
+    startstring = "?? "
   case "added":
-    startstring = "Changes to be committed:"
-    trim = "new file:"
-    alttrim = "modified:"
+    startstring = "Mm "
   case "changed":
-    startstring = "Changes not staged for commit:"
-    trim = "modified:"
-    alttrim = "deleted:"
+    startstring = " M "
   case "":
     untracked_files := strings.Join(getFiles("untracked"), "\n")
     changed_files := strings.Join(getFiles("changed"), "\n")
     added_files := strings.Join(getFiles("added"), "\n")
-    fmt.Printf("Untracked files: \n\t%v\n\nChanged files: \n\t%v\n\nFiles to commit: \n\t%v\n",
+    fmt.Printf("\nUntracked files: \n%v\n\nChanged files: \n%v\n\nFiles to commit: \n%v\n\n",
       untracked_files,
       changed_files,
       added_files)
@@ -159,44 +161,25 @@ func getFiles(state string) (files []string) {
     fmt.Printf("Invalid option '%v'", state)
     return
   }
-  files = getStatus()
-  keystart := len(files)
-  keyend := keystart
-  for index, value := range files {
-    if value == startstring {
-      keystart = index
-      continue
+  available_files := getStatus()
+  for index, value := range available_files {
+    if strings.HasPrefix(value, startstring) {
+      available_files[index] = strings.TrimPrefix(available_files[index], startstring)
+      available_files[index] = strings.TrimSpace(available_files[index])
+      files = append(files, available_files[index])
     }
-    if len(value) == 0 && index > keystart {
-      keyend = index
-      break
-    }
-    files[index] = strings.TrimPrefix(files[index], trim)
-    files[index] = strings.TrimPrefix(files[index], alttrim)
-    files[index] = strings.TrimSpace(files[index])
   }
-  if keystart == len(files) {
-    files = nil
-    return
-  }
-  if keyend == 0 {
-    keyend = len(files)
-  }
-  if startstring == "Changes not staged for commit:" {
-    keystart += 1
-  }
-  files = files[keystart + 2:keyend]
   return
 }
 
 func gitAdd(files []string) {
-  for index, _ := range files {
-    add := exec.Command("git", "add", files[index])
+  for _, value := range files {
+    add := exec.Command("git", "add", value)
     err := add.Run()
     if err != nil {
       log.Fatal(err)
     } else {
-      log.Printf("Added: %v\n", files[index])
+      log.Printf("Added: %v\n", value)
     }
   }
 }
@@ -254,6 +237,19 @@ func getCommitid() (commitid string) {
     commitid = commitids[0]
   } else {
     log.Fatal(err)
+  }
+  return
+}
+
+func getDiff(filename string) (changes []string) {
+  diff := exec.Command("git", "diff", "--minimal", filename)
+  changed, err := diff.CombinedOutput()
+  fmt.Println(len(changed))
+  if err != nil || string(changed) == "" {
+    log.Println("An error occured, file does not exist or there's simply no output")
+  } else {
+    changed_lines := strings.Split(string(changed), "\n")
+    changes = changed_lines[4:]
   }
   return
 }
