@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"strings"
 	"strconv"
+	"slices"
 )
 
 func main() {
@@ -72,7 +73,17 @@ func runCommand(input []string) {
     if len(input) == 1 {
       files := getFiles("untracked")
       files = append(files[:], getFiles("changed")[:]...)
-      gitAdd(addFiles(files))
+      gitAdd(addFiles(files, "normal"))
+      fmt.Printf("Commit message? ")
+      message, err := bufio.NewReader(os.Stdin).ReadString('\n')
+      if err == nil {
+	message = strings.TrimSuffix(message, "\n")
+	commitFiles(message)
+      }
+    } else if len(input) == 2 {
+      files := getFiles("untracked")
+      files = append(files[:], getFiles("changed")[:]...)
+      gitAdd(addFiles(files, "exclude"))
       fmt.Printf("Commit message? ")
       message, err := bufio.NewReader(os.Stdin).ReadString('\n')
       if err == nil {
@@ -80,11 +91,11 @@ func runCommand(input []string) {
 	commitFiles(message)
       }
     } else {
-      gitAdd(input[1:])
+      gitAdd(input[2:])
     }
   case "restore":
     if len(input) == 1 {
-      restoreFiles(addFiles(getFiles("added")))
+      restoreFiles(addFiles(getFiles("added"), "normal"))
     } else {
       restoreFiles(input[1:])
     }
@@ -151,7 +162,7 @@ func getFiles(state string) (files []string) {
   case "untracked":
     startstring = "?? "
   case "added":
-    startstring = "Mm "
+    startstring = "M"
   case "changed":
     startstring = " M "
   case "":
@@ -191,37 +202,51 @@ func gitAdd(files []string) {
 }
 
 // TODO: Allow usage of '*'
-func addFiles(files []string) (addedfiles []string) {
+func addFiles(files []string, mode string) (addedfiles []string) {
   if len(files) == 0 {
     return
   }
   var inputsplit []string
-    for index, value := range files {
-      fmt.Printf("%v: %v\n", index + 1, value)
-    }
-    fmt.Println("Enter the index of the files to select.")
-    reader := bufio.NewReader(os.Stdin)
-    fmt.Print("--> ")
-    input, err := reader.ReadString('\n')
-    if err != nil {
-      fmt.Println()
-      return
-    }
-    if input == "\n" {
-      addedfiles = files
-      return
-    }
-    input = strings.TrimSuffix(input, "\n")
-    inputsplit = strings.Split(input, " ")
-    for _, value := range inputsplit {
-      intvalue, err := strconv.Atoi(value)
-      if err != nil {
-	fmt.Println("Invalid input.")
-	addFiles(files)
-      }
-      addedfiles = append(addedfiles, files[intvalue - 1])
-    }
+  for index, value := range files {
+    fmt.Printf("%v: %v\n", index + 1, value)
+  }
+  fmt.Println("Enter the index of the files to select.")
+  reader := bufio.NewReader(os.Stdin)
+  fmt.Print("--> ")
+  input, err := reader.ReadString('\n')
+  if err != nil {
+    fmt.Println()
     return
+  }
+  if input == "\n" {
+    addedfiles = files
+    return
+  }
+  input = strings.TrimSuffix(input, "\n")
+  inputsplit = strings.Split(input, " ")
+  var indcies []int
+  for _, value := range inputsplit {
+    intvalue, err := strconv.Atoi(value)
+    indcies = append(indcies[:], intvalue - 1)
+    if err != nil {
+      fmt.Println("Invalid input.")
+      addFiles(files, mode)
+    }
+  }
+  for index := range len(files) {
+    switch mode {
+    case "normal":
+      if slices.Contains(indcies, index) {
+	addedfiles = append(addedfiles, files[index])
+      }
+    case "exclude":
+      if slices.Contains(indcies, index) {
+	continue
+      }
+      addedfiles = append(addedfiles, files[index])
+    }
+  }
+  return
 }
 
 func restoreFiles(files []string) {
