@@ -79,16 +79,20 @@ func runCommand(input []string) {
       if err == nil {
 	message = strings.TrimSuffix(message, "\n")
 	commitFiles(message)
+      } else {
+	fmt.Println()
       }
     } else if len(input) == 2 {
       files := getFiles("untracked")
       files = append(files[:], getFiles("changed")[:]...)
-      gitAdd(addFiles(files, "exclude"))
+      gitAdd(addFiles(files, input[1]))
       fmt.Printf("Commit message? ")
       message, err := bufio.NewReader(os.Stdin).ReadString('\n')
       if err == nil {
 	message = strings.TrimSuffix(message, "\n")
 	commitFiles(message)
+      } else {
+	fmt.Println()
       }
     } else {
       gitAdd(input[2:])
