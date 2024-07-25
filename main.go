@@ -63,6 +63,7 @@ func loop() {
 func runCommand(input []string) {
   command := strings.TrimSpace(input[0])
   switch command {
+  case "":
   case "view":
     if len(input) > 1 {
       fmt.Println(getFiles(input[1]))
@@ -284,10 +285,15 @@ func getDiff(filename string) (changes []string) {
   diff := exec.Command("git", "diff", "--minimal", filename)
   changed, err := diff.CombinedOutput()
   if err != nil || string(changed) == "" {
-    log.Println("An error occured, file does not exist or there's simply no output")
+    log.Println("An error occured, file does not exist or there are simply no changes")
   } else {
     changed_lines := strings.Split(string(changed), "\n")
     changes = changed_lines[4:]
+    for index, value := range changes {
+      if strings.HasPrefix("+", value) {
+	changes[index] = "\033[32m GREEN" + changes[index] + "\033[0m" 
+      }
+    }
   }
   return
 }
