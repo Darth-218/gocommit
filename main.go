@@ -95,7 +95,11 @@ func runCommand(input []string) {
 	fmt.Println()
       }
     } else {
-      gitAdd(input[2:])
+      if input[1] == "normal" {
+	gitAdd(input[2:])
+      } else {
+	fmt.Println("Work in progress")
+      }
     }
   case "restore":
     if len(input) == 1 {
@@ -279,7 +283,6 @@ func getCommitid() (commitid string) {
 func getDiff(filename string) (changes []string) {
   diff := exec.Command("git", "diff", "--minimal", filename)
   changed, err := diff.CombinedOutput()
-  fmt.Println(len(changed))
   if err != nil || string(changed) == "" {
     log.Println("An error occured, file does not exist or there's simply no output")
   } else {
