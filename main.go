@@ -1,7 +1,8 @@
-// TODO: git diff colors
+// TODO: Push after commit
 // TODO: TUI
 // TODO: Tab completions
 // FIX: "view" outputs
+// FIX: git diff colors
 // FIX: remove the git repo inside the git repo from showing
 // up as a change
 package main
