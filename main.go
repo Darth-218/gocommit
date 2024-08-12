@@ -81,6 +81,18 @@ func runCommand(input []string) {
       if err == nil {
 	message = strings.TrimSuffix(message, "\n")
 	commitFiles(message)
+	fmt.Printf("Push changes? [Y/n]")
+	message, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil {
+	  fmt.Println()
+	} else {
+	  message = strings.ToLower(strings.TrimSuffix(message, "\n"))
+	  if message == "y" || message == "" {
+	    pushFiles()
+	  } else {
+	    fmt.Println()
+	  }
+	}
       } else {
 	fmt.Println()
       }
