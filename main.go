@@ -1,4 +1,4 @@
-// TODO: Push after commit
+// TODO: REFACTOR
 // TODO: TUI
 // TODO: Tab completions
 // FIX: "view" outputs
@@ -16,63 +16,50 @@ import (
 	"strings"
 	"strconv"
 	"slices"
+	"github.com/chzyer/readline"
 )
 
 func main() {
-  if checkDir() {
+  if isGitDir() {
     getFiles("")
     loop()
-  } else {
-    log.Fatal("Current directory is not a git repository.")
-  }
+  } else { log.Fatal("Current directory is not a git repository.") }
 }
 
-func checkDir() (isgit bool) {
-  isgit = false
-  fullpath, _ := os.Getwd()
-  paths := strings.Split(fullpath, "/")
-  end := len(paths)
-  for end >= 0 {
-    currentpath := paths[0:end]
-    currentpathjoined := strings.Join(currentpath, "/") + "/.git"
-    _, err := os.ReadDir(currentpathjoined)
-    if err == nil {
-      isgit = true
-      return
-    }
-    end--
-  }
-  return
+func isGitDir() (bool) {
+  full_path, _ := os.Getwd()
+  sep_paths := strings.Split(full_path, "/")
+  for index := len(sep_paths); index >= 0; index-- {
+    path_to_git := strings.Join(sep_paths[0:index], "/") + "/.git"
+    _, err := os.ReadDir(path_to_git)
+    if err == nil { return true }
+  }; return false
 }
 
 func loop() {
-  reader := bufio.NewReader(os.Stdin)
-  for true {
-    fmt.Printf(">> ")
-    input, err := reader.ReadString('\n')
-    if err == nil {
-      input = strings.TrimSuffix(input, "\n")
-      inputsplit := strings.Split(input, " ")
-      runCommand(inputsplit)
-    } else {
-      fmt.Printf("\n%v\n", err)
-      break
-    }
+  prompt, _ := readline.New(">> ")
+  defer prompt.Close()
+  for {
+    input, err := prompt.Readline()
+    if err != nil { fmt.Printf("\n%v\n", err); break }
+    split_input := strings.Split(input, " ")
+    runCommand(split_input)
   }
 }
 
-func runCommand(input []string) {
-  command := strings.TrimSpace(input[0])
+func runCommand(argv []string) {
+  argc := len(argv)
+  command := strings.TrimSpace(argv[0])
   switch command {
   case "":
   case "view":
-    if len(input) > 1 {
-      fmt.Println(getFiles(input[1]))
+    if argc > 1 {
+      fmt.Println(getFiles(argv[1]))
     } else {
       getFiles("")
     }
   case "add":
-    if len(input) == 1 {
+    if argc == 1 {
       files := getFiles("untracked")
       files = append(files[:], getFiles("changed")[:]...)
       gitAdd(addFiles(files, "normal"))
@@ -81,7 +68,7 @@ func runCommand(input []string) {
       if err == nil {
 	message = strings.TrimSuffix(message, "\n")
 	commitFiles(message)
-	fmt.Printf("Push changes? [Y/n]")
+	fmt.Printf("Push changes? [Y/n] ")
 	message, err := bufio.NewReader(os.Stdin).ReadString('\n')
 	if err != nil {
 	  fmt.Println()
@@ -96,10 +83,10 @@ func runCommand(input []string) {
       } else {
 	fmt.Println()
       }
-    } else if len(input) == 2 {
+    } else if argc == 2 {
       files := getFiles("untracked")
       files = append(files[:], getFiles("changed")[:]...)
-      gitAdd(addFiles(files, input[1]))
+      gitAdd(addFiles(files, argv[1]))
       fmt.Printf("Commit message? ")
       message, err := bufio.NewReader(os.Stdin).ReadString('\n')
       if err == nil {
@@ -109,27 +96,27 @@ func runCommand(input []string) {
 	fmt.Println()
       }
     } else {
-      if input[1] == "normal" {
-	gitAdd(input[2:])
+      if argv[1] == "normal" {
+	gitAdd(argv[2:])
       } else {
 	fmt.Println("Work in progress")
       }
     }
   case "restore":
-    if len(input) == 1 {
+    if argc == 1 {
       restoreFiles(addFiles(getFiles("added"), "normal"))
     } else {
-      restoreFiles(input[1:])
+      restoreFiles(argv[1:])
     }
   case "commit":
-    if len(input) > 1 {
-      commitFiles(strings.Join(input[1:], " "))
+    if argc > 1 {
+      commitFiles(strings.Join(argv[1:], " "))
     } else {
       fmt.Println("No commit message specified")
     }
   case "diff":
-    if len(input) > 1 {
-      changes := getDiff(input[1])
+    if argc > 1 {
+      changes := getDiff(argv[1])
       changes_str := strings.Join(changes, "\n")
       fmt.Println(changes_str)
     } else {
@@ -146,7 +133,7 @@ func runCommand(input []string) {
   case "help":
     help()
   default:
-    fmt.Printf("Invalid option: %v. Use 'help' to see available commands\n", input[0])
+    fmt.Printf("Invalid option: %v. Use 'help' to see available commands\n", command)
   }
 }
 
