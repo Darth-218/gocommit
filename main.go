@@ -67,16 +67,16 @@ func runCommand(argv []string) {
       getFiles("")
     }
   case "add":
+    files := append(getFiles("untracked"), getFiles("changed")[:]...)
+    commit_prompt, _ := readline.New("Commit message? ")
+    confirmation_prompt, _ := readline.New("Push changes? [Y/n] ")
     if argc == 1 {
-      files := append(getFiles("untracked"), getFiles("changed")[:]...)
       gitAdd(addFiles(files, "normal"))
-      prompt, _ := readline.New("Commit message? ")
-      message, err := prompt.Readline()
+      message, err := commit_prompt.Readline()
       if err != nil {
 	fmt.Println()
       }
       commitFiles(strings.TrimSuffix(message, "\n"))
-      confirmation_prompt, _ := readline.New("Push changes? [Y/n] ")
       confirmation, err := confirmation_prompt.Readline()
       if err != nil {
 	fmt.Println()
@@ -86,17 +86,13 @@ func runCommand(argv []string) {
 	pushFiles()
       }
     } else if argc == 2 {
-      files := getFiles("untracked")
-      files = append(files[:], getFiles("changed")[:]...)
       gitAdd(addFiles(files, argv[1]))
-      fmt.Printf("Commit message? ")
-      message, err := bufio.NewReader(os.Stdin).ReadString('\n')
-      if err == nil {
-	message = strings.TrimSuffix(message, "\n")
-	commitFiles(message)
-      } else {
+      message, err := commit_prompt.Readline()
+      if err != nil {
 	fmt.Println()
-      }
+      }	
+      message = strings.TrimSuffix(message, "\n")
+      commitFiles(message)
     } else {
       if argv[1] == "normal" {
 	gitAdd(argv[2:])
