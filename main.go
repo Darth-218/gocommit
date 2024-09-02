@@ -8,32 +8,37 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
-	"log"
-	"os"
-	"os/exec"
-	"strings"
-	"strconv"
-	"slices"
-	"github.com/chzyer/readline"
+  "bufio"
+  "fmt"
+  "github.com/chzyer/readline"
+  "log"
+  "os"
+  "os/exec"
+  "slices"
+  "strconv"
+  "strings"
 )
 
 func main() {
   if isGitDir() {
     getFiles("")
     loop()
-  } else { log.Fatal("Current directory is not a git repository.") }
+  } else {
+    log.Fatal("Current directory is not a git repository.")
+  }
 }
 
-func isGitDir() (bool) {
+func isGitDir() bool {
   full_path, _ := os.Getwd()
   sep_paths := strings.Split(full_path, "/")
   for index := len(sep_paths); index >= 0; index-- {
     path_to_git := strings.Join(sep_paths[0:index], "/") + "/.git"
     _, err := os.ReadDir(path_to_git)
-    if err == nil { return true }
-  }; return false
+    if err == nil {
+      return true
+    }
+  }
+  return false
 }
 
 func loop() {
@@ -41,7 +46,10 @@ func loop() {
   defer prompt.Close()
   for {
     input, err := prompt.Readline()
-    if err != nil { fmt.Printf("\n%v\n", err); break }
+    if err != nil {
+      fmt.Printf("\n%v\n", err)
+      break
+    }
     split_input := strings.Split(input, " ")
     runCommand(split_input)
   }
@@ -181,7 +189,7 @@ func getFiles(state string) (files []string) {
     fmt.Printf("\nUntracked files: \n%v\n\nChanged files: \n%v\n\nFiles to commit: \n%v\n\n",
       untracked_files,
       changed_files,
-      added_files)
+    added_files)
     return
   default:
     fmt.Printf("Invalid option '%v'", state)
@@ -217,7 +225,7 @@ func addFiles(files []string, mode string) (addedfiles []string) {
   }
   var inputsplit []string
   for index, value := range files {
-    fmt.Printf("%v: %v\n", index + 1, value)
+    fmt.Printf("%v: %v\n", index+1, value)
   }
   fmt.Println("Enter the index of the files to select.")
   reader := bufio.NewReader(os.Stdin)
@@ -236,7 +244,7 @@ func addFiles(files []string, mode string) (addedfiles []string) {
   var indcies []int
   for _, value := range inputsplit {
     intvalue, err := strconv.Atoi(value)
-    indcies = append(indcies[:], intvalue - 1)
+    indcies = append(indcies[:], intvalue-1)
     if err != nil {
       fmt.Println("Invalid input.")
       addFiles(files, mode)
@@ -291,7 +299,7 @@ func getDiff(filename string) (changes []string) {
     changes = changed_lines[4:]
     for index, value := range changes {
       if strings.HasPrefix("+", value) {
-	changes[index] = "\033[32m GREEN" + changes[index] + "\033[0m" 
+	changes[index] = "\033[32m GREEN" + changes[index] + "\033[0m"
       }
     }
   }
