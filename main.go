@@ -76,8 +76,8 @@ func runCommand(argv []string) {
 	fmt.Println()
       }
       commitFiles(strings.TrimSuffix(message, "\n"))
-      fmt.Printf("Push changes? [Y/n] ")
-      confirmation, err := prompt.Readline()
+      confirmation_prompt, _ := readline.New("Push changes? [Y/n] ")
+      confirmation, err := confirmation_prompt.Readline()
       if err != nil {
 	fmt.Println()
       }
