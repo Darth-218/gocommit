@@ -14,7 +14,6 @@ import (
   "log"
   "os"
   "os/exec"
-  "slices"
   "strconv"
   "strings"
 )
