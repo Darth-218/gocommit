@@ -59,50 +59,42 @@ func runCommand(argv []string) {
   argc := len(argv)
   command := strings.TrimSpace(argv[0])
   switch command {
-  case "":
-  case "view":
-    if argc > 1 {
+  case "": // If there's no input do nothing
+  case "view": // Viewing files according to their status
+    // TODO: User passing more than one argument
+    if argc > 1 { // View only the argument passed 
       fmt.Println(getFiles(argv[1]))
-    } else {
+    } else { // If the command is executed without args view *
       getFiles("")
     }
-  case "add":
+  case "add": // Staging files
     files := append(getFiles("untracked"), getFiles("changed")[:]...)
+    // Input prompts
     commit_prompt, _ := readline.New("Commit message? ")
-    confirmation_prompt, _ := readline.New("Push changes? [Y/n] ")
+    push_prompt, _ := readline.New("Push changes? [Y/n] ")
     if argc == 1 {
-      gitAdd(addFiles(files, "normal"))
-      message, err := commit_prompt.Readline()
+      gitAdd(selectFiles(files, "normal"))
+      commit_message, err := commit_prompt.Readline()
       if err != nil {
 	fmt.Println()
+	return
       }
-      commitFiles(strings.TrimSuffix(message, "\n"))
-      confirmation, err := confirmation_prompt.Readline()
+      commitFiles(strings.TrimSuffix(commit_message, "\n"))
+      push_confirmation, err := push_prompt.Readline()
       if err != nil {
 	fmt.Println()
+	return
       }
-      confirmation = strings.ToLower(strings.TrimSuffix(confirmation, "\n"))
-      if confirmation == "y" || confirmation == "" {
+      push_confirmation = strings.ToLower(strings.TrimSuffix(push_confirmation, "\n"))
+      if push_confirmation == "y" || push_confirmation == "" {
 	pushFiles()
       }
-    } else if argc == 2 {
-      gitAdd(addFiles(files, argv[1]))
-      message, err := commit_prompt.Readline()
-      if err != nil {
-	fmt.Println()
-      }	
-      message = strings.TrimSuffix(message, "\n")
-      commitFiles(message)
-    } else {
-      if argv[1] == "normal" {
-	gitAdd(argv[2:])
-      } else {
-	fmt.Println("Work in progress")
-      }
+    } else if argc > 1 {
+      gitAdd(argv[1:])
     }
   case "restore":
     if argc == 1 {
-      restoreFiles(addFiles(getFiles("added"), "normal"))
+      restoreFiles(selectFiles(getFiles("added"), "normal"))
     } else {
       restoreFiles(argv[1:])
     }
@@ -209,7 +201,7 @@ func gitAdd(files []string) {
 }
 
 // TODO: Allow usage of '*'
-func addFiles(files []string, mode string) (addedfiles []string) {
+func selectFiles(files []string, mode string) (selected_files []string) {
   if len(files) == 0 {
     return
   }
@@ -217,7 +209,7 @@ func addFiles(files []string, mode string) (addedfiles []string) {
   for index, value := range files {
     fmt.Printf("%v: %v\n", index+1, value)
   }
-  fmt.Println("Enter the index of the files to select.")
+  fmt.Println("Enter indcies of files to select.")
   reader := bufio.NewReader(os.Stdin)
   fmt.Print("--> ")
   input, err := reader.ReadString('\n')
@@ -226,7 +218,7 @@ func addFiles(files []string, mode string) (addedfiles []string) {
     return
   }
   if input == "\n" {
-    addedfiles = files
+    selected_files = files
     return
   }
   input = strings.TrimSuffix(input, "\n")
@@ -237,20 +229,7 @@ func addFiles(files []string, mode string) (addedfiles []string) {
     indcies = append(indcies[:], intvalue-1)
     if err != nil {
       fmt.Println("Invalid input.")
-      addFiles(files, mode)
-    }
-  }
-  for index := range len(files) {
-    switch mode {
-    case "normal":
-      if slices.Contains(indcies, index) {
-	addedfiles = append(addedfiles, files[index])
-      }
-    case "exclude":
-      if slices.Contains(indcies, index) {
-	continue
-      }
-      addedfiles = append(addedfiles, files[index])
+      selectFiles(files, mode)
     }
   }
   return
