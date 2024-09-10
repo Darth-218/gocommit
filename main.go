@@ -58,17 +58,16 @@ func runCommand(argv []string) {
   argc := len(argv)
   command := strings.TrimSpace(argv[0])
   switch command {
-  case "": // If there's no input do nothing
-  case "view": // Viewing files according to their status
+  case "":
+  case "view":
     // TODO: User passing more than one argument
-    if argc > 1 { // View only the argument passed 
+    if argc > 1 {
       fmt.Println(getFiles(argv[1]))
-    } else { // If the command is executed without args view *
+    } else {
       getFiles("")
     }
-  case "add": // Staging files
+  case "add":
     files := append(getFiles("untracked"), getFiles("changed")[:]...)
-    // Input prompts
     commit_prompt, _ := readline.New("Commit message? ")
     push_prompt, _ := readline.New("Push changes? [Y/n] ")
     if argc == 1 {
@@ -80,6 +79,7 @@ func runCommand(argv []string) {
       }
       commit_status := commitFiles(strings.TrimSuffix(commit_message, "\n"))
       if !commit_status {
+	fmt.Println("No commit message provided.")
 	return
       }
       push_confirmation, err := push_prompt.Readline()
@@ -167,13 +167,10 @@ func getFiles(state string) (files []string) {
   case "changed":
     startstring = " M "
   case "":
-    untracked_files := strings.Join(getFiles("untracked"), "\n")
-    changed_files := strings.Join(getFiles("changed"), "\n")
-    added_files := strings.Join(getFiles("added"), "\n")
     fmt.Printf("\nUntracked files: \n%v\n\nChanged files: \n%v\n\nFiles to commit: \n%v\n\n",
-      untracked_files,
-      changed_files,
-    added_files)
+      strings.Join(getFiles("untracked"), "\n"),
+      strings.Join(getFiles("changed"), "\n"),
+      strings.Join(getFiles("added"), "\n"))
     return
   default:
     fmt.Printf("Invalid option '%v'", state)
@@ -182,8 +179,7 @@ func getFiles(state string) (files []string) {
   available_files := getStatus()
   for index, value := range available_files {
     if strings.HasPrefix(value, startstring) {
-      available_files[index] = strings.TrimPrefix(available_files[index], startstring)
-      available_files[index] = strings.TrimSpace(available_files[index])
+      available_files[index] = strings.TrimSpace(strings.TrimPrefix(available_files[index], startstring))
       files = append(files, available_files[index])
     }
   }
@@ -202,7 +198,6 @@ func gitAdd(files []string) {
   }
 }
 
-// TODO: Allow usage of '*'
 func selectFiles(files []string, mode string) (selected_files []string) {
   if len(files) == 0 {
     return
@@ -277,18 +272,18 @@ func getDiff(filename string) (changes []string) {
   return
 }
 
-func commitFiles(commitmessage string) (bool) {
-  commit := exec.Command("git", "commit", "-m", commitmessage)
+func commitFiles(commit_message string) (bool) {
+  fmt.Println("<%v>", commit_message)
+  commit := exec.Command("git", "commit", "-m", commit_message)
   message, err := commit.CombinedOutput()
-  if strings.Contains(string(message), commitmessage) == false {
+  if strings.Contains(string(message), commit_message) == false {
     log.Println("No changes to commit.")
     return false
   }
   if err != nil {
     log.Fatal(err)
-  } else {
-    log.Println("Files committed ->", getCommitid())
   }
+  log.Println("Files committed ->", getCommitid())
   return true
 }
 
