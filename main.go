@@ -78,7 +78,10 @@ func runCommand(argv []string) {
 	fmt.Println()
 	return
       }
-      commitFiles(strings.TrimSuffix(commit_message, "\n"))
+      commit_status := commitFiles(strings.TrimSuffix(commit_message, "\n"))
+      if !commit_status {
+	return
+      }
       push_confirmation, err := push_prompt.Readline()
       if err != nil {
 	fmt.Println()
@@ -274,18 +277,19 @@ func getDiff(filename string) (changes []string) {
   return
 }
 
-func commitFiles(commitmessage string) {
+func commitFiles(commitmessage string) (bool) {
   commit := exec.Command("git", "commit", "-m", commitmessage)
   message, err := commit.CombinedOutput()
   if strings.Contains(string(message), commitmessage) == false {
     log.Println("No changes to commit.")
-    return
+    return false
   }
   if err != nil {
     log.Fatal(err)
   } else {
     log.Println("Files committed ->", getCommitid())
   }
+  return true
 }
 
 func pushFiles() {
